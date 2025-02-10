@@ -1,7 +1,6 @@
 package gee
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -9,18 +8,18 @@ type HandlerFunc func(http.ResponseWriter, *http.Request)
 
 // Engine 创建路由引擎
 type Engine struct {
-	router map[string]HandlerFunc
+	router *Router
 }
 
 // New 创建路由引擎
 func New() *Engine {
-	return &Engine{router: make(map[string]HandlerFunc)}
+	return &Engine{router: NewRouter()}
 }
 
 // 添加路由
 func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	key := method + "-" + pattern
-	engine.router[key] = handler
+	// 调用router接口的addRoute方法
+	engine.router.addRoute(method, pattern, handler)
 }
 
 // GET 添加GET请求路由
@@ -40,11 +39,7 @@ func (engine *Engine) Run(addr string) error {
 
 // ServeHTTP 实现http.Handler接口
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	key := r.Method + "-" + r.URL.Path
-	// 根据key查找是否存在该路由
-	if handler, ok := engine.router[key]; ok {
-		handler(w, r)
-	} else {
-		fmt.Fprintf(w, "404 NOT FOUND: %s\n", r.URL)
-	}
+	// 创建上下文
+	c := NewContext(w, r)
+	engine.router.handle(c)
 }
