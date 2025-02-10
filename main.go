@@ -1,34 +1,26 @@
 package main
 
 import (
+	"Gee/gee"
 	"fmt"
 	"net/http"
 )
 
-/*
-type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
-}
-*/
+func main() {
+	// 首先对路由进行初始化
+	r := gee.New()
 
-// Engine 自定义类实现ServerHTTP接口
-type Engine struct{}
-
-// Engine实现ServerHTTP接口
-func (engine *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/":
+	// 然后根据不同的路由类型，调用不同的处理函数
+	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
-	case "/hello":
+	})
+
+	r.GET("/hello", func(w http.ResponseWriter, r *http.Request) {
 		for k, v := range r.Header {
 			fmt.Fprintf(w, "Header[%q] = %q\n", k, v)
 		}
-	default:
-		fmt.Fprintf(w, "404 NOT FOUND: %s\n", r.URL)
-	}
-}
+	})
 
-func main() {
-	engine := &Engine{}
-	http.ListenAndServe(":8080", engine)
+	// 启动路由
+	r.Run(":8080")
 }
