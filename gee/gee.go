@@ -11,8 +11,8 @@ type Engine struct {
 	router *Router
 }
 
-// New 创建路由引擎
-func New() *Engine {
+// Default 创建路由引擎
+func Default() *Engine {
 	return &Engine{router: NewRouter()}
 }
 

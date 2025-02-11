@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// 首先对路由进行初始化
-	r := gee.New()
+	r := gee.Default()
 
 	// 然后根据不同的路由类型，调用不同的处理函数
 	r.GET("/", func(w http.ResponseWriter, r *http.Request) {

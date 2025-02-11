@@ -8,7 +8,7 @@ type Router struct {
 	handles map[string]HandlerFunc
 }
 
-// 初始化
+// NewRouter 初始化
 func NewRouter() *Router {
 	return &Router{handles: make(map[string]HandlerFunc)}
 }
