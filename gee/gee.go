@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-type HandlerFunc func(http.ResponseWriter, *http.Request)
+type HandlerFunc func(*Context)
 
 // Engine 创建路由引擎
 type Engine struct {

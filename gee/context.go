@@ -17,6 +17,7 @@ type Context struct {
 	// 请求信息
 	Path   string
 	Method string
+	Params map[string]string
 	// 状态码
 	StatusCode int
 }
@@ -40,7 +41,7 @@ func (c *Context) SetHeader(key string, value string) {
 	c.Writer.Header().Set(key, value)
 }
 
-// 提供访问Query和PostForm参数的方法
+// 提供访问Query、PostForm和Param参数的方法
 
 func (c *Context) PostForm(key string) string {
 	return c.Req.FormValue(key)
@@ -48,6 +49,11 @@ func (c *Context) PostForm(key string) string {
 
 func (c *Context) Query(key string) string {
 	return c.Req.URL.Query().Get(key)
+}
+
+func (c *Context) Param(key string) string {
+	value, _ := c.Params[key]
+	return value
 }
 
 // 提供了快速构造String/Data/JSON/HTML响应的方法
