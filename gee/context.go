@@ -23,6 +23,8 @@ type Context struct {
 	// 中间件
 	handlers []HandlerFunc
 	index    int
+	// Engine指针
+	engine *Engine
 }
 
 // NewContext 创建一个新的上下文
@@ -93,8 +95,11 @@ func (c *Context) Data(code int, data []byte) {
 }
 
 // HTML 返回HTML格式数据
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	// 加载HTML模板
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+	}
 }

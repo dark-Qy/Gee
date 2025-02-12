@@ -1,7 +1,9 @@
 package gee
 
 import (
+	"html/template"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -18,6 +20,9 @@ type Engine struct {
 	*RouterGroup // 继承RouterGroup的属性
 	router       *Router
 	groups       []*RouterGroup
+	// html template
+	htmlTemplates *template.Template
+	funcMap       template.FuncMap
 }
 
 // Default 创建路由引擎
@@ -26,6 +31,42 @@ func Default() *Engine {
 	engine.RouterGroup = &RouterGroup{engine: engine}
 	engine.groups = []*RouterGroup{engine.RouterGroup}
 	return engine
+}
+
+// SetFuncMap 设置模板函数
+func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
+	engine.funcMap = funcMap
+}
+
+// LoadHTMLGlob 加载模板
+func (engine *Engine) LoadHTMLGlob(pattern string) {
+	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
+}
+
+// create static handler
+func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	// 生成URL绝对路径
+	absolutePath := path.Join(group.prefix, relativePath)
+	// http.StripPrefix用于过滤掉URL中的前缀，创建一个文件服务器,把请求的URL中的前缀去掉
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(c *Context) {
+		// 获取请求的文件路径
+		file := c.Param("filepath")
+		// 检查文件是否存在
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		fileServer.ServeHTTP(c.Writer, c.Req)
+	}
+}
+
+// serve static files
+func (group *RouterGroup) Static(relativePath string, root string) {
+	handler := group.createStaticHandler(relativePath, http.Dir(root))
+	urlPattern := path.Join(relativePath, "/*filepath")
+	// Register GET handlers
+	group.GET(urlPattern, handler)
 }
 
 // Use 添加中间件
@@ -79,5 +120,6 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 创建上下文
 	c := NewContext(w, r)
 	c.handlers = middlewares
+	c.engine = engine
 	engine.router.handle(c)
 }
