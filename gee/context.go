@@ -20,6 +20,9 @@ type Context struct {
 	Params map[string]string
 	// 状态码
 	StatusCode int
+	// 中间件
+	handlers []HandlerFunc
+	index    int
 }
 
 // NewContext 创建一个新的上下文
@@ -29,6 +32,15 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		Req:    r,
 		Path:   r.URL.Path,
 		Method: r.Method,
+		index:  -1,
+	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
 	}
 }
 

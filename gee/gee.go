@@ -2,6 +2,7 @@ package gee
 
 import (
 	"net/http"
+	"strings"
 )
 
 type HandlerFunc func(*Context)
@@ -9,7 +10,6 @@ type HandlerFunc func(*Context)
 type RouterGroup struct {
 	prefix      string
 	middlewares []HandlerFunc // 中间件
-	parent      *RouterGroup  // 支持嵌套
 	engine      *Engine       // 所有的group共享一个Engine实例
 }
 
@@ -28,12 +28,16 @@ func Default() *Engine {
 	return engine
 }
 
+// Use 添加中间件
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
+}
+
 // Group 创建路由组
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	engine := group.engine
 	newGroup := &RouterGroup{
 		prefix: group.prefix + prefix,
-		parent: group,
 		engine: engine,
 	}
 	engine.groups = append(engine.groups, newGroup)
@@ -65,7 +69,15 @@ func (engine *Engine) Run(addr string) error {
 
 // ServeHTTP 实现http.Handler接口
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var middlewares []HandlerFunc
+	// 遍历所有的group，找到所有的中间件
+	for _, group := range engine.groups {
+		if strings.HasPrefix(r.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	// 创建上下文
 	c := NewContext(w, r)
+	c.handlers = middlewares
 	engine.router.handle(c)
 }

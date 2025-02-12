@@ -2,12 +2,28 @@ package main
 
 import (
 	"Gee/gee"
+	"log"
 	"net/http"
+	"time"
 )
+
+func onlyForV2() gee.HandlerFunc {
+	return func(c *gee.Context) {
+		// Start timer
+		t := time.Now()
+		// if a server error occurred
+		c.String(500, "Internal Server Error")
+		// Calculate resolution time
+		log.Printf("[%d] %s in %v for group v2", c.StatusCode, c.Req.RequestURI, time.Since(t))
+	}
+}
 
 func main() {
 	// 首先对路由进行初始化
 	r := gee.Default()
+
+	// 通用中间件
+	r.Use(gee.Logger())
 
 	// 然后根据不同的路由类型，调用不同的处理函数
 	r.GET("/index", func(c *gee.Context) {
@@ -25,6 +41,7 @@ func main() {
 		})
 	}
 	v2 := r.Group("/v2")
+	v2.Use(onlyForV2())
 	{
 		v2.GET("/hello/:name", func(c *gee.Context) {
 			// expect /hello/geektutu
@@ -38,9 +55,6 @@ func main() {
 		})
 
 	}
-
-	r.Run(":8080")
-
 	// 启动路由
 	r.Run(":8080")
 }
