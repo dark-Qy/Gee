@@ -30,6 +30,9 @@ func Default() *Engine {
 	engine := &Engine{router: NewRouter()}
 	engine.RouterGroup = &RouterGroup{engine: engine}
 	engine.groups = []*RouterGroup{engine.RouterGroup}
+	// 默认使用中间件
+	engine.Use(Logger())
+	engine.Use(Recovery())
 	return engine
 }
 
